@@ -6,7 +6,6 @@ from pathlib import Path
 import h5py
 import numpy as np
 from scipy import sparse
-import anndata as ad
 import scanpy as sc
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))  # vendored `common` (src/common) + module-local writers
@@ -19,7 +18,7 @@ def parse_args():
     # We own the parser; src/common/cli injects the shared contract (base args + the
     # `FEAT` stage I/O from common/schema). This module's method params are
     # hand-rolled below, so the whole CLI stays visible here.
-    p = argparse.ArgumentParser(description="NORM module (scanpy-backed)")
+    p = argparse.ArgumentParser(description="FEAT module (scanpy-backed)")
     cli.add_base_args(p)              # --output_dir, --name
     cli.add_stage_args(p, "FEAT")     # --rawdata_h5ad, --normalized_h5, --filtered_cellids, --properties_info
     p.add_argument("--flavor", type=str, required=True, help="Feature selection type")
@@ -93,10 +92,10 @@ def write_tenx_matrix(adata, h5_path):
         g.create_dataset("barcodes", data=cell_ids, dtype=str_dtype)
 
 
-def select_by_scanpy_hvg(adata, number_selected):
-    """Select HVGs using Scanpy's Seurat-like normalized-data method."""
+def select_by_scanpy_hvg(adata, number_selected, flavor):
+    """Select HVGs using Scanpy's standard HVG method."""
     adata = adata.copy()
-    sc.pp.highly_variable_genes(adata, n_top_genes=number_selected, flavor="seurat")
+    sc.pp.highly_variable_genes(adata, n_top_genes=number_selected, flavor=flavor)
 
     selected = adata.var_names[adata.var["highly_variable"]].tolist()
     return selected[:number_selected]
@@ -110,7 +109,6 @@ def select_by_scanpy_pearson_residuals(adata, number_selected):
     sc.experimental.pp.highly_variable_genes(adata, flavor="pearson_residuals", n_top_genes=number_selected, clip=None)
 
     return adata.var_names[adata.var["highly_variable"]].tolist()
-
 
 def main():
     args = parse_args()
@@ -131,11 +129,14 @@ def main():
 
     if args.number_selected > adata_norm.n_vars:
         raise ValueError(
-            f"number_selected={number_selected} is larger than number of features={adata_norm.n_vars}"
+            f"number_selected={args.number_selected} is larger than number of features={adata_norm.n_vars}"
         )
     
     if args.flavor == "scanpy_seurat":
-        sel_feats = select_by_scanpy_hvg(adata_norm, args.number_selected)
+        sel_feats = select_by_scanpy_hvg(adata_norm, args.number_selected, flavor="seurat")
+
+    elif args.flavor == "scanpy_cell_ranger":
+        sel_feats = select_by_scanpy_hvg(adata_norm, args.number_selected, flavor="cell_ranger")
 
     # TODO：order by gini coef and select top  N; currently it is based on pvalue
     # elif args.flavor == "giniclust3":
@@ -165,7 +166,7 @@ def main():
     # Write a simple output file
     adata_selected = adata_norm[:, sel_feats].copy()
 
-    output_file = args.output_dir / f"{args.name}_normalized_selected.h5"
+    output_file = output_dir / f"{args.name}_normalized_selected.h5"
     print(f"output_file: {output_file}")
 
     write_tenx_matrix(adata_selected, output_file)

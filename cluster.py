@@ -45,7 +45,11 @@ _RESOLUTION_AWARE = {"RBConfiguration", "CPM"}
 def parse_args():
     p = argparse.ArgumentParser(description="Leiden clustering module (scanpy-backed)")
     cli.add_base_args(p)
-    cli.add_stage_args(p, "CLUST")
+    g = p.add_mutually_exclusive_group(required=True)
+    g.add_argument("--neighbors_h5", dest="neighbors_h5", type=Path,
+                   help="H5 file with neighbors")
+    g.add_argument("--neighbors_corrected_h5", dest="neighbors_h5", type=Path,
+                   help="H5 file with neighbors (corrected embedding)")
     p.add_argument("--resolution", type=float, required=True,
                    help="Resolution controlling cluster granularity")
     p.add_argument("--random_seed", type=int, required=True, help="Random seed")

@@ -28,12 +28,13 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))  # vendored `common` pack
 from common import cli  # noqa: E402
 
 def parse_args():
-    # We own the parser; common/cli injects the shared contract (base args + the
-    # `nngraph` stage I/O from common/schema). This module's method params are
-    # hand-rolled below, so the whole CLI stays visible here.
     p = argparse.ArgumentParser(description="kNN graph module (scanpy-backed)")
     cli.add_base_args(p)                # --output_dir, --name
-    cli.add_stage_args(p, "NNG")    # --pcas_tsv
+    g = p.add_mutually_exclusive_group(required=True)
+    g.add_argument("--pcas_tsv", dest="pcas_tsv", type=Path,
+                   help="PCA embedding TSV (cell_ids as rownames)")
+    g.add_argument("--corrected_tsv", dest="pcas_tsv", type=Path,
+                   help="Batch-corrected embedding TSV (cell_ids as rownames)")
     p.add_argument("--n_neighbors", type=int, required=True,
                    help="Number of nearest neighbors")
     p.add_argument("--flavor", type=str, required=True,

@@ -76,8 +76,14 @@ def main():
 
     print(f"  number of filtered cells: {len(cellids)}")
 
+    # Read filtered feature IDs
+    with gzip.open(args.filtered_featureids, "rt") as f:
+        featureids = [line.strip() for line in f if line.strip()]
+
+    print(f"  number of filtered features: {len(featureids)}")
+    
     adata = sc.read_h5ad(args.rawdata_h5ad)
-    adata = adata[cellids, :].copy()
+    adata = adata[cellids, featureids].copy()
     adata.X = adata.layers["counts"].copy()
 
     print(f"  shape of adata.X: {adata.X.shape}")

@@ -95,6 +95,17 @@ def write_tenx_matrix(adata, h5_path):
 def select_by_scanpy_hvg(adata, number_selected, flavor):
     """Select HVGs using Scanpy's standard HVG method."""
     adata = adata.copy()
+
+    gene_sums = np.asarray(adata.X.sum(axis=0)).ravel()
+    keep = np.isfinite(gene_sums) & (gene_sums > 0)
+    print(f"keeping {keep.sum()} / {adata.n_vars} genes with nonzero sum before scanpy HVG")
+
+    adata = adata[:, keep].copy()
+    if number_selected > adata.n_vars:
+        raise ValueError(
+            f"number_selected={number_selected} is larger than number of features={adata.n_vars}"
+        )
+
     sc.pp.highly_variable_genes(adata, n_top_genes=number_selected, flavor=flavor)
 
     selected = adata.var_names[adata.var["highly_variable"]].tolist()

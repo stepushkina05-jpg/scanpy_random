@@ -76,6 +76,19 @@ def run_pca(adata, args):
     #chunked = args.chunked == "true"
     chunked = False
 
+    if args.solver == "randomized":
+        if sp.issparse(adata.X):
+            print(
+                "Converting sparse matrix to dense "
+                "for randomized PCA"
+            )
+            adata.X = adata.X.toarray()
+
+        adata.X = np.asarray(
+            adata.X,
+            dtype=np.float64,
+        )
+
     sc.pp.pca(
         adata,
         n_comps=args.n_components,

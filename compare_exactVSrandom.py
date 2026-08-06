@@ -15,15 +15,15 @@ ARPACK_FILE = Path(
     "test_results/pca/pbmc3k_pcas.tsv"
 )
 
+SEEDS = range(1, 11)
+
 RANDOMIZED_FILES = {
-    1: Path(
-        "test_results/pca_randomized/"
-        "pbmc3k_seed_1_pcas.tsv"
-    ),
-    2: Path(
-        "test_results/pca_randomized/"
-        "pbmc3k_seed_2_pcas.tsv"
-    ),
+    seed: (
+        Path("test_results")
+        / "pca_randomized"
+        / f"pbmc3k_seed_{seed}_pcas.tsv"
+    )
+    for seed in SEEDS
 }
 
 OUTPUT_DIR = Path(
@@ -210,19 +210,57 @@ pc_numbers = np.arange(
     len(pc_names) + 1,
 )
 
+correlation_matrix = np.vstack(
+    [
+        correlation_results[seed]
+        for seed in sorted(correlation_results)
+    ]
+)
+
+median_correlations = np.median(
+    correlation_matrix,
+    axis=0,
+)
+
+minimum_correlations = np.min(
+    correlation_matrix,
+    axis=0,
+)
+
+maximum_correlations = np.max(
+    correlation_matrix,
+    axis=0,
+)
+
 plt.figure(figsize=(10, 6))
 
-for seed, correlations in (
-    correlation_results.items()
-):
+# Individual seed runs
+for seed in sorted(correlation_results):
     plt.plot(
         pc_numbers,
-        correlations,
-        marker="o",
-        markersize=3,
-        linewidth=1.3,
-        label=f"Seed {seed}",
+        correlation_results[seed],
+        linewidth=0.8,
+        alpha=0.35,
     )
+
+# Range across seeds
+plt.fill_between(
+    pc_numbers,
+    minimum_correlations,
+    maximum_correlations,
+    alpha=0.20,
+    label="Seed range",
+)
+
+# Median across seeds
+plt.plot(
+    pc_numbers,
+    median_correlations,
+    marker="o",
+    markersize=3,
+    linewidth=2.0,
+    label="Median across 10 seeds",
+)
 
 plt.axhline(
     CORRELATION_THRESHOLD,
@@ -238,8 +276,9 @@ plt.xlabel("Principal component")
 plt.ylabel(
     "Absolute correlation with ARPACK"
 )
+
 plt.title(
-    "Randomized PCA compared with ARPACK reference"
+    "Scanpy randomized PCA across 10 seeds"
 )
 
 plt.ylim(0, 1.02)
@@ -258,7 +297,7 @@ plt.tight_layout()
 
 plot_file = (
     OUTPUT_DIR
-    / "randomized_vs_arpack_correlations.png"
+    / "randomized_10_seeds_vs_arpack.png"
 )
 
 plt.savefig(
@@ -267,30 +306,3 @@ plt.savefig(
 )
 
 plt.close()
-
-
-# --------------------------------------------------
-# PRINT SUMMARY
-# --------------------------------------------------
-
-print("\nCorrelation summary:")
-print(
-    summary_table.to_string(
-        index=False
-    )
-)
-
-print("\nSaved correlation table:")
-print(
-    OUTPUT_DIR
-    / "randomized_vs_arpack_correlations.tsv"
-)
-
-print("\nSaved summary:")
-print(
-    OUTPUT_DIR
-    / "randomized_vs_arpack_summary.tsv"
-)
-
-print("\nSaved plot:")
-print(plot_file)

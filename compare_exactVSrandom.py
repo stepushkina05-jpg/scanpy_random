@@ -12,10 +12,10 @@ import pandas as pd
 # --------------------------------------------------
 
 ARPACK_FILE = Path(
-    "test_results/pca/pbmc3k_pcas.tsv"
+    "test_results/pca_full/pbmc3k_full_pcas.tsv"
 )
 
-SEEDS = range(1, 11)
+SEEDS = range(1, 51)
 
 RANDOMIZED_FILES = {
     seed: (
@@ -40,7 +40,7 @@ OUTPUT_DIR.mkdir(
 # SETTINGS
 # --------------------------------------------------
 
-CORRELATION_THRESHOLD = 0.90
+CORRELATION_THRESHOLD = 0.95
 
 
 # --------------------------------------------------
@@ -278,7 +278,7 @@ plt.ylabel(
 )
 
 plt.title(
-    "Scanpy randomized PCA across 10 seeds"
+    "Scanpy randomized PCA across 50 seeds"
 )
 
 plt.ylim(0, 1.02)
@@ -297,7 +297,7 @@ plt.tight_layout()
 
 plot_file = (
     OUTPUT_DIR
-    / "randomized_10_seeds_vs_arpack.png"
+    / "randomized_50_seeds_vs_arpack.png"
 )
 
 plt.savefig(
@@ -306,3 +306,63 @@ plt.savefig(
 )
 
 plt.close()
+
+
+# --------------------------------------------------
+# PLOT BREAKDOWN POINT BY SEED
+# --------------------------------------------------
+
+breakdown_plot_data = (
+    summary_table
+    .dropna(subset=["breakdown_pc"])
+    .copy()
+)
+
+breakdown_plot_data[
+    "breakdown_pc"
+] = breakdown_plot_data[
+    "breakdown_pc"
+].astype(int)
+
+plt.figure(figsize=(12, 6))
+
+plt.bar(
+    breakdown_plot_data["seed"],
+    breakdown_plot_data["breakdown_pc"],
+)
+
+plt.xlabel("Random seed")
+plt.ylabel(
+    "First PC below correlation threshold"
+)
+
+plt.title(
+    "Randomized PCA breakdown point by seed"
+)
+
+plt.xticks(
+    breakdown_plot_data["seed"]
+)
+
+plt.ylim(
+    0,
+    breakdown_plot_data[
+        "breakdown_pc"
+    ].max() + 3,
+)
+
+plt.tight_layout()
+
+breakdown_plot_file = (
+    OUTPUT_DIR
+    / "breakdown_point_by_seed.png"
+)
+
+plt.savefig(
+    breakdown_plot_file,
+    dpi=300,
+)
+
+plt.close()
+print("\nSaved breakdown plot:")
+print(breakdown_plot_file)

@@ -69,25 +69,39 @@ def load_matrix(h5_path):
     return adata
 
 
+# new import 
+import sklearn.decomposition._pca as sklearn_pca
+
+
+
 def run_pca(adata, args):
     # Chunked mode triggers IncrementalPCA. It is most effective with backed
     # AnnData; for in-memory data it provides no memory benefit and is slower.
     # Sparse inputs get densified per chunk during partial_fit.
     #chunked = args.chunked == "true"
+ ##################### new 
     chunked = False
 
     if args.solver == "randomized":
         if sp.issparse(adata.X):
-            print(
-                "Converting sparse matrix to dense "
-                "for randomized PCA"
-            )
+            print( "Converting sparse matrix to dense " "for randomized PCA" )
             adata.X = adata.X.toarray()
 
-        adata.X = np.asarray(
-            adata.X,
-            dtype=np.float64,
-        )
+        adata.X = np.asarray( adata.X, dtype=np.float64, )
+
+    original_randomized_svd = ( sklearn_pca._randomized_svd)
+    
+    def fixed_randomized_svd(*args_, **kwargs):
+            kwargs["n_iter"] = 2
+            kwargs["n_oversamples"] = 10
+
+            return original_randomized_svd( *args_, **kwargs, )
+
+    sklearn_pca._randomized_svd = ( fixed_randomized_svd )    
+######
+
+
+
 
     sc.pp.pca(
         adata,
@@ -98,6 +112,7 @@ def run_pca(adata, args):
         chunked=chunked,
         chunk_size=args.chunk_size if chunked else None,
     )
+
 
     embedding = np.asarray(adata.obsm["X_pca"], dtype=np.float64)
     loadings = np.asarray(adata.varm["PCs"], dtype=np.float64)

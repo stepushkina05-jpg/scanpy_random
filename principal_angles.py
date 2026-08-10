@@ -13,7 +13,7 @@ from scipy.linalg import subspace_angles
 # --------------------------------------------------
 
 ARPACK_FILE = Path(
-    "test_results/pca/pbmc3k_pcas.tsv"
+    "test_results/pca_full/pbmc3k_full_pcas.tsv"
 )
 
 RANDOMIZED_DIR = Path(
@@ -34,7 +34,7 @@ OUTPUT_DIR.mkdir(
 # SETTINGS
 # --------------------------------------------------
 
-SEEDS = range(1, 11)
+SEEDS = range(1, 51)
 
 K_VALUES = [
     5,
@@ -179,6 +179,79 @@ results = pd.DataFrame(
     records
 )
 
+# --------------------------------------------------
+# RANK SEEDS AT ONE FIXED k
+# --------------------------------------------------
+
+SELECTION_K = 20
+
+ranking = (
+    results[
+        results["k"] == SELECTION_K
+    ]
+    .sort_values(
+        "mean_angle_degrees"
+    )
+    .reset_index(drop=True)
+)
+
+ranking.to_csv(
+    OUTPUT_DIR
+    / f"principal_angle_ranking_k{SELECTION_K}.tsv",
+    sep="\t",
+    index=False,
+)
+
+print(
+    "\nSeed ranking by mean principal angle "
+    f"at k={SELECTION_K}:"
+)
+
+print(
+    ranking[
+        [
+            "seed",
+            "mean_angle_degrees",
+            "maximum_angle_degrees",
+        ]
+    ].to_string(index=False)
+)
+
+
+
+
+
+
+
+low_seed = int(
+    ranking.iloc[0]["seed"]
+)
+
+median_seed = int(
+    ranking.iloc[
+        len(ranking) // 2
+    ]["seed"]
+)
+
+high_seed = int(
+    ranking.iloc[-1]["seed"]
+)
+
+print(
+    "\nSelected seeds:"
+)
+
+print(
+    f"Low subspace error: seed {low_seed}"
+)
+
+print(
+    f"Typical subspace error: seed {median_seed}"
+)
+
+print(
+    f"High subspace error: seed {high_seed}"
+)
 
 # --------------------------------------------------
 # SAVE TABLES
@@ -261,7 +334,7 @@ plt.plot(
     median_curve.values,
     marker="o",
     linewidth=2.5,
-    label="Median across 10 seeds",
+    label="Median across 50 seeds",
 )
 
 plt.xlabel(
@@ -300,43 +373,6 @@ plt.savefig(
 plt.close()
 
 
-for k in K_VALUES:
-    subset = results[results["k"] == k]
 
-    print(
-        f"k={k}:",
-        "median maximum angle =",
-        subset["maximum_angle_degrees"].median(),
-        "median mean angle =",
-        subset["mean_angle_degrees"].median(),
-    )
-# --------------------------------------------------
-# PRINT SUMMARY
-# --------------------------------------------------
-
-print(
-    "\nPrincipal-angle summary:"
-)
-
-print(
-    summary.to_string(
-        index=False
-    )
-)
-
-print(
-    "\nSaved detailed results:"
-)
-
-print(
-    OUTPUT_DIR
-    / "principal_angles_by_seed.tsv"
-)
-
-print(
-    "\nSaved plot:"
-)
-
-print(
-    plot_file
-)
+print( "\nSaved plot:")
+print (plot_file)

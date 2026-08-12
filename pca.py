@@ -44,7 +44,7 @@ def parse_args():
     cli.add_base_args(p)             # --output_dir, --name
     cli.add_stage_args(p, "PCA")     # --normalized_selected_h5
     p.add_argument("--solver", type=str, required=True,
-                   choices=["arpack", "randomized"], help="PCA solver")
+                   choices=["full", "arpack", "randomized"], help="PCA solver")
     p.add_argument("--n_components", type=int, required=True,
                    help="Number of principal components to compute")
     p.add_argument("--random_seed", type=int, required=True,
@@ -82,20 +82,20 @@ def run_pca(adata, args):
  ##################### new 
     chunked = False
 
-    if args.solver == "randomized":
+    if args.solver in ("randomized", "full"):
         if sp.issparse(adata.X):
             print( "Converting sparse matrix to dense " "for randomized PCA" )
             adata.X = adata.X.toarray()
 
         adata.X = np.asarray( adata.X, dtype=np.float64, )
+    if args.solver == "randomized":
+        original_randomized_svd = ( sklearn_pca._randomized_svd)
+        
+        def fixed_randomized_svd(*args_, **kwargs):
+                kwargs["n_iter"] = 2
+                kwargs["n_oversamples"] = 10
 
-    original_randomized_svd = ( sklearn_pca._randomized_svd)
-    
-    def fixed_randomized_svd(*args_, **kwargs):
-            kwargs["n_iter"] = 2
-            kwargs["n_oversamples"] = 10
-
-            return original_randomized_svd( *args_, **kwargs, )
+                return original_randomized_svd( *args_, **kwargs, )
 
     sklearn_pca._randomized_svd = ( fixed_randomized_svd )    
 ######

@@ -43,6 +43,7 @@ def parse_args():
     return p.parse_args()
 
 
+
 def _write_csr(grp, m):
     m = m.tocsr()
     grp.create_dataset("data",    data=m.data)
@@ -68,9 +69,12 @@ def main():
 
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
+
+    N_PCS = 2
+
     # TSV has N header cols and N+1 data cols (first data col = row IDs, unnamed).
     df = pl.read_csv(args.pcas_tsv, separator="\t", skip_rows=1, has_header=False)
-    embedding = df[:, 1:].to_numpy().astype(np.float64)
+    embedding = df[:, 1:1 + N_PCS].to_numpy().astype(np.float64)
 
     adata = ad.AnnData(X=np.zeros((embedding.shape[0], 1)))
     adata.obs_names = df[:, 0].to_list()

@@ -53,6 +53,22 @@ def parse_args():
 
 
 def load_matrix(h5_path):
+    h5_path = Path(h5_path)
+
+    # --------------------------------------------------
+    # STANDARD H5AD INPUT
+    # --------------------------------------------------
+    if h5_path.suffix == ".h5ad":
+        adata = sc.read_h5ad(h5_path)
+
+        # make sure names exist
+        if adata.obs_names is None:
+            adata.obs_names = [f"Cell{i+1}" for i in range(adata.n_obs)]
+
+        if adata.var_names is None:
+            adata.var_names = [f"Gene{i+1}" for i in range(adata.n_vars)]
+
+        return adata
     with h5py.File(h5_path, "r") as h5:
         g = h5["matrix"]
         data = g["data"][:]
@@ -84,20 +100,19 @@ def run_pca(adata, args):
 
     if args.solver in ("randomized", "full"):
         if sp.issparse(adata.X):
-            print( "Converting sparse matrix to dense " "for randomized PCA" )
+            print( "Converting sparse matrix to dense for PCA" )
             adata.X = adata.X.toarray()
-
         adata.X = np.asarray( adata.X, dtype=np.float64, )
     if args.solver == "randomized":
         original_randomized_svd = ( sklearn_pca._randomized_svd)
         
         def fixed_randomized_svd(*args_, **kwargs):
-                kwargs["n_iter"] = 2
+                kwargs["n_iter"] = 6
                 kwargs["n_oversamples"] = 10
 
                 return original_randomized_svd( *args_, **kwargs, )
 
-    sklearn_pca._randomized_svd = ( fixed_randomized_svd )    
+        sklearn_pca._randomized_svd = ( fixed_randomized_svd )    
 ######
 
 

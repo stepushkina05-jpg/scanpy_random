@@ -84,7 +84,14 @@ def main():
     
     adata = sc.read_h5ad(args.rawdata_h5ad)
     adata = adata[cellids, featureids].copy()
-    adata.X = adata.layers["counts"].copy()
+
+
+    if "counts" in adata.layers:
+        print("  using raw counts from adata.layers['counts']")
+        adata.X = adata.layers["counts"].copy()
+    else:
+        print("  no 'counts' layer found; using adata.X as raw counts")
+        adata.X = adata.X.copy()
 
     print(f"  shape of adata.X: {adata.X.shape}")
 

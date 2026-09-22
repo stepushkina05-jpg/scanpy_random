@@ -11,15 +11,15 @@ import matplotlib.pyplot as plt
 # --------------------------------------------------
 
 FULL_FILE = Path(
-    "test_results/pca_full/p35_s42_broad_signal_full_pcas.tsv"
+    "test_results/pca_full/p31_s42_narrow_signal_full_pcas.tsv"
 )
 
 RANDOM_DIR = Path(
-    "test_results/pca_randomized/35_broad_signal"
+    "test_results/pca_randomized/31_narrow_signal/n2_over30"
 )
 
 OUTPUT_FILE = Path(
-    "figures/broad_signal.png"
+    "figures/narrow_signal_50_seeds_30.png"
 )
 
 OUTPUT_FILE.parent.mkdir(
@@ -58,7 +58,7 @@ exact_ids, exact = read_pca(FULL_FILE)
 results = []
 
 random_files = sorted(
-    RANDOM_DIR.glob("broad_signal_seed*_iter2_over10_pcas.tsv")
+    RANDOM_DIR.glob("narrow_signal_seed*_iter2_over30_pcas.tsv")
 )
 
 print("Randomized files found:", len(random_files))
@@ -133,7 +133,7 @@ plt.axhline(
 plt.xlabel("Principal component")
 plt.ylabel("|Correlation with full PCA|")
 plt.title(
-    "small gaps randomized PCA variability across 10 seeds"
+    "Narrow signal randomized PCA variability across 50 seeds -30"
 )
 
 plt.ylim(0, 1.02)

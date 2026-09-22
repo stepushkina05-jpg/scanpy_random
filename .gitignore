@@ -57,6 +57,11 @@ Thumbs.db
 .pixi/*
 !.pixi/config.toml
 
-#inputs
-test_input/
+
+# intermediate results 
+*.tsv
+*.csv
+*.png
+*.zip
 test_results/
+test_input/

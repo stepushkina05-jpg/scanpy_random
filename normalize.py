@@ -10,7 +10,6 @@ import numpy as np
 from scipy import sparse
 import anndata as ad
 import scanpy as sc
-
 sys.path.insert(0, str(Path(__file__).parent / "src"))  # vendored `common` (src/common) + module-local writers
 from common import cli  # noqa: E402
 #from writers import Embedding, Loadings, write_embeddings, write_loadings  # noqa: E402

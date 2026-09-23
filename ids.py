@@ -4,13 +4,11 @@ import argparse
 import gzip
 from pathlib import Path
 import scanpy as sc
-
 p = argparse.ArgumentParser(description="Keep all cells and features")
 p.add_argument("--output_dir", type=Path, required=True)
 p.add_argument("--name", type=str, required=True)
 p.add_argument("--rawdata_h5ad", type=Path, required=True)
 args = p.parse_args()
-
 args.output_dir.mkdir(parents=True, exist_ok=True)
 adata = sc.read_h5ad(args.rawdata_h5ad)
 

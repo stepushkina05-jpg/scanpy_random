@@ -1,6 +1,7 @@
 # OmniBenchmark Module Configuration
 
 entrypoints:
+
   ids: ids.py
   pca: pca.py
   pca-prof: denet pca.py

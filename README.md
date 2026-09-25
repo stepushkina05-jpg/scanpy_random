@@ -1,50 +1,64 @@
-# Scanpy
+# Scanpy randomized PCA benchmark modules
 
-Scanpy-backed PCA module for omnibenchmark scRNA pipelines.
+Scanpy/sklearn modules used in the randomized PCA OmniBenchmark pipeline.
 
-## Setup
+## Upstream and modifications
 
-```sh
-pixi install
-pixi run check
-```
+This repository is based on the `omni-scrna/scanpy` OmniBenchmark module.
 
-`pixi run check` imports all runtime dependencies and prints `OK`. Run it after install to confirm the environment is healthy.
+Original repository:
+https://github.com/omnibenchmark/omni-scrna/tree/main/scanpy
 
-## Usage
+The code was adapted for this project to support randomized PCA experiments, including repeated random seeds, configurable randomized-SVD parameters, PCA loadings/scores export, and downstream clustering of selected benchmark runs.
+## PCA
 
-### PCA
+`pca.py` computes either exact or randomized PCA on the preprocessed
+cell × gene matrix supplied by the benchmark.
 
-```sh
-pixi run python pca.py \
-  --output_dir <dir> \
-  --name <name> \
-  --normalized.h5 <normalized.h5> \
-  --selected.genes <selected.genes.gz> \
-  --solver <arpack|randomized> \
-  --n_components <int> \
-  --random_seed <int>
-```
+### Exact PCA
 
-Output: `<output_dir>/<name>_<solver>_n_<n_components>.h5` — see [`docs/pca_output.md`](docs/pca_output.md) for the full format spec.
+Exact PCA is computed through Scanpy.
 
-#### Validation
+### Randomized PCA
 
+Randomized PCA uses `sklearn.decomposition.PCA` with
+`svd_solver="randomized"`.
 
-```sh
-pixi run validate <output_dir>/<name>_pca.h5
-```
+The randomized approximation is controlled by:
 
-Exit codes: `0` = valid, `1` = validation failure, `2` = IO / usage error.
+- `random_seed`
+- `n_iter`
+- `n_oversamples`
 
-## Conda environment export
+All runs compute 50 principal components unless configured otherwise.
 
-```sh
-pixi run export-env
-```
+### Input
 
-Exports the resolved environment to `envs/scanpy.yml`. The environment is named after the repo root folder.
+The PCA module receives the normalized, HVG-selected matrix produced by
+the upstream benchmark stages.
 
-## Citation
+### Outputs
 
-If you use this module in your research, please cite it using the information in `CITATION.cff`.
+- `{name}_pcas.tsv`: PCA scores, cells × PCs
+- `{name}_loadings.tsv`: PCA loadings, genes × PCs
+
+## kNN and clustering
+
+`cluster.py` performs Leiden clustering from a precomputed neighbor graph.
+
+`selected_clustering.py` applies the clustering module to the exact,
+best-seed and worst-seed graphs selected by the benchmark and produces a
+manifest of clustering outputs.
+
+The Leiden random seed is kept fixed when comparing PCA runs so that
+differences reflect changes propagated from PCA rather than additional
+clustering randomness.
+
+## Reproducibility
+
+The OmniBenchmark environment is defined in:
+
+`envs/scanpy.yaml`
+
+Benchmark plans should reference a specific Git commit of this repository
+rather than a moving branch.

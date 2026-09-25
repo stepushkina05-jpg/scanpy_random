@@ -1,73 +1,41 @@
 #!/usr/bin/env python3
 """
-PCA module (scanpy-backed) for omnibenchmark.
+PCA module for the randomized-PCA benchmark.
 
-Output
-------
-File: {output_dir}/{name}_pcas.tsv
+Input
+-----
+Preprocessed cell × gene matrix from the FEAT stage
+(`--normalized_selected_h5`).
 
-Tab-separated, with header row:
-  cell_id  PC1  PC2  ...  PC{n_components}
+Outputs
+-------
+{name}_pcas.tsv
+    Cell × PC score matrix.
 
-One row per cell; values are float64 PCA scores.
+{name}_loadings.tsv
+    Gene × PC loading matrix.
 
-Implementation notes
---------------------
-- Genes are mean-centered (only) before PCA via sc.pp.pca(zero_center=True).
-  No per-gene variance scaling — matches scrapper/rapids-singlecell. If
-  alternative scaling is needed later, expose it as a new --pca_type variant
-  rather than as an independent flag.
+Methods
+-------
+Exact PCA:
+    Scanpy PCA using the requested exact solver.
 
---solver randomized IS SILENTLY IGNORED (measured 2026-08-15)
-------------------------------------------------------------
-This module always feeds sc.pp.pca a SPARSE matrix (load_matrix returns CSR),
-and sklearn's PCA accepts only {'arpack', 'covariance_eigh'} for sparse input.
-scanpy therefore coerces svd_solver='randomized' to 'arpack' and warns:
+Randomized PCA:
+    sklearn.decomposition.PCA with svd_solver="randomized".
+    The approximation is controlled by:
+        --random_seed
+        --n_iter
+        --n_oversamples
 
-    UserWarning: Ignoring svd_solver='randomized' and using arpack,
-    sklearn.decomposition._pca.PCA (with sparse input) only supports
-    dict_keys(['arpack', 'covariance_eigh'])
+Preprocessing assumptions
+-------------------------
+The input matrix is already normalized and restricted to selected HVGs.
+Genes are mean-centered for PCA but are not variance-scaled.
 
-The warning goes to stderr and is invisible in benchmark results, so the
-'randomized' arm has been producing byte-identical output to 'arpack' — a
-duplicate job, not a second solver. `choices=["arpack", "randomized"]` in the
-parser advertises a solver this module cannot deliver.
-
-WHY sklearn refuses: PCA must mean-centre, and for sparse input the centring
-has to stay implicit — arpack does it through a LinearOperator, covariance_eigh
-through the Gram matrix. sklearn's randomized path calls randomized_svd on the
-centred matrix, which would mean materialising X - mean, i.e. densifying. So
-sklearn rejects it rather than silently blowing up memory.
-
-This is an sklearn-PCA limitation, NOT a mathematical one. Implicit centring
-composes fine with a randomised range finder — (X - 1 mu^T) O = X O - 1 (mu^T O),
-all matvecs — which is how R's irlba does it via center=. Demonstrated by the
-benchmark's own sibling modules, all on the same sparse CSR input and without
-densifying: rapids-singlecell randomized-halko (seed-sensitive), scrapper
-random (seed-sensitive), and sklearn's own TruncatedSVD with
-algorithm="randomized" (which is allowed precisely because it does not centre).
-
-Measured on be1 (1715 x 2000), n_comps=10, vs sparse arpack:
-    dense full          1.0e-12   (a third exact solver; adds nothing)
-    dense randomized    9.9e-4    (genuinely different)
-    dense randomized, seed 42 vs 43   1.7e-3   (genuinely seed-sensitive)
-Note the seed effect exceeds the approximation bias. Also covariance_eigh
-agrees with arpack to 8e-13, so on sparse input the solver axis is degenerate.
-
-FIX OPTIONS, in increasing order of work:
-  1. Drop "randomized" from choices — stop advertising it. Honest, one line.
-  2. Densify only when solver == randomized, documenting the memory cost
-     (27MB for be1, ~2.5GB for pbmc at 157k x 2000). Buys a CPU approximate arm
-     with a real seed axis -- but note the benchmark ALREADY has approximate,
-     seed-sensitive arms from scrapper random (CPU) and rapids randomized-halko
-     (GPU), so this is a second one, not the only one.
-  2b. Better if the arm is wanted: implement implicit centring around a
-     randomised range finder, as irlba does, and keep the input sparse. More
-     work than densifying, but it is the thing sklearn is missing rather than a
-     workaround for it.
-  3. Expose covariance_eigh instead — but it is numerically the same as arpack
-     here, so it adds a job, not information.
+The randomized sklearn implementation currently operates on the dense
+matrix representation when --dense true is used.
 """
+
 
 import argparse
 import os

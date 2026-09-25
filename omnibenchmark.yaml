@@ -9,6 +9,7 @@ entrypoints:
   cluster: cluster.py
   normalize: normalize.py
   feat-select: feat-select.py
+  selected-clustering: selected_clustering.py
 
 # common code
 # `pixi run -e dev sync` (from this module root) refreshes it.

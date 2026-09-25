@@ -63,5 +63,8 @@ Thumbs.db
 *.csv
 *.png
 *.zip
+test_metrics/
 test_results/
 test_input/
+figures/
+*.pdf

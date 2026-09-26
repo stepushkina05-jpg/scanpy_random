@@ -71,7 +71,6 @@ def main():
         )
 
         clusters_file = output_dir / f"{stem}_clusters.tsv"
-
         pd.DataFrame({
             "cell_id": cell_ids,
             "cluster": labels,

@@ -93,6 +93,7 @@ def main():
             "dataset": dataset,
             "method": method,
             "k": k,
+            "resolution": args.resolution,
             "selection": selection,
             "pca_seed": pca_seed,
             "neighbors_file": str(neighbors_file),

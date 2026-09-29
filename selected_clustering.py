@@ -1,4 +1,3 @@
-##!/usr/bin/env python3
 #!/usr/bin/env python3
 """Run Leiden clustering on selected exact, best-seed, and worst-seed kNN graphs.
 
@@ -43,6 +42,7 @@ def main():
         "selection",
         "pca_seed",
         "neighbors_file",
+        "labels_file",
     }
 
     if not required.issubset(manifest.columns):
@@ -61,6 +61,7 @@ def main():
         k = int(row["k"])
         selection = row["selection"]
         neighbors_file = Path(row["neighbors_file"])
+        labels_file = Path(row["labels_file"])
 
         if selection == "exact":
             pca_seed = ""
@@ -100,11 +101,14 @@ def main():
             "selection": selection,
             "pca_seed": pca_seed,
             "neighbors_file": str(neighbors_file),
-            "clusters_file": str(clusters_file)})
+            "clusters_file": str(clusters_file),
+            "labels_file": str(labels_file),
+        })
 
     clustering_manifest = pd.DataFrame(clustering_manifest)
     clustering_manifest = clustering_manifest.sort_values(
-        ["dataset", "method", "k", "selection"])
+        ["dataset", "method", "k", "selection"]
+    )
 
     manifest_file = (
         output_dir / f"{args.name}_selected_clustering_manifest.tsv"

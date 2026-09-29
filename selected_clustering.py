@@ -94,11 +94,13 @@ def main():
             "method": method,
             "k": k,
             "resolution": args.resolution,
+            "clustering_seed": args.random_seed,
+            "flavor": args.flavor,
+            "partition_type": args.partition_type,
             "selection": selection,
             "pca_seed": pca_seed,
             "neighbors_file": str(neighbors_file),
-            "clusters_file": str(clusters_file),
-        })
+            "clusters_file": str(clusters_file)})
 
     clustering_manifest = pd.DataFrame(clustering_manifest)
     clustering_manifest = clustering_manifest.sort_values(
